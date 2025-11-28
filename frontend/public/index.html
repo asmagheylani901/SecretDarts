@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Encrypted Character Progress • Zama FHEVM</title>
+  <title>Secret Darts • Zama FHEVM</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <!-- Required for Relayer SDK (WASM/Workers) -->
@@ -11,25 +11,28 @@
 
   <style>
     :root {
-      --bg-main: #f3f4f6;
-      --bg-page: #e5e7eb;
+      --bg-page: #f3f4f8;
+      --bg-grid: radial-gradient(circle at 0 0, rgba(148, 163, 184, 0.18), transparent 55%),
+                 radial-gradient(circle at 100% 100%, rgba(191, 219, 254, 0.45), transparent 55%);
       --bg-card: #ffffff;
-      --bg-card-alt: #f9fafb;
-      --accent: #2563eb;
-      --accent-soft: rgba(37, 99, 235, 0.08);
-      --accent-strong: #1d4ed8;
-      --danger: #dc2626;
-      --danger-soft: rgba(220, 38, 38, 0.06);
+      --bg-card-soft: #f9fafb;
+      --ink: #111827;
       --muted: #6b7280;
-      --muted-soft: #9ca3af;
-      --ink: #0f172a;
       --border: #e5e7eb;
-      --border-soft: #e5e7eb;
-      --border-strong: #cbd5e1;
+      --border-strong: #cbd5f5;
+      --accent: #2563eb;
+      --accent-soft: #dbeafe;
+      --accent-strong: #1d4ed8;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --ring-bull: #eab308;
+      --ring-inner: #22c55e;
+      --ring-outer: #3b82f6;
+      --ring-miss: #9ca3af;
       --radius-lg: 18px;
-      --radius-md: 10px;
-      --shadow-soft: 0 18px 40px rgba(15, 23, 42, 0.08);
-      --shadow-card: 0 14px 30px rgba(15, 23, 42, 0.06);
+      --radius-md: 12px;
+      --shadow-soft: 0 18px 50px rgba(15, 23, 42, 0.14);
+      --shadow-light: 0 10px 22px rgba(15, 23, 42, 0.08);
       --sans: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
@@ -46,63 +49,194 @@
 
     body {
       font-family: var(--sans);
-      background:
-        radial-gradient(circle at 0 0, rgba(37, 99, 235, 0.08), transparent 55%),
-        radial-gradient(circle at 100% 0, rgba(16, 185, 129, 0.06), transparent 60%),
-        var(--bg-main);
-      color: var(--ink);
       font-size: 14px;
       line-height: 1.5;
+      color: var(--ink);
+      background:
+        var(--bg-grid),
+        linear-gradient(to bottom, #f1f5f9, #e5e7eb);
       -webkit-font-smoothing: antialiased;
     }
 
-    .page {
+    .app {
       max-width: 1120px;
       margin: 0 auto;
-      padding: 22px 16px 36px;
+      padding: 18px 16px 32px;
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      gap: 16px;
     }
 
-    /* HEADER / HERO */
+    /* HEADER */
 
-    .hero {
-      display: grid;
-      grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.5fr);
-      gap: 16px;
-      align-items: stretch;
+    .topbar {
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: 16px;
+      padding: 10px 14px;
+      border: 1px solid rgba(209, 213, 219, 0.9);
+      box-shadow: var(--shadow-light);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      position: sticky;
+      top: 10px;
+      backdrop-filter: blur(10px);
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #111827;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .chip-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      border-radius: 999px;
+      border: 1px solid rgba(209, 213, 219, 0.9);
+      background: #f9fafb;
+      padding: 4px 10px;
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+
+    .chip-label {
+      color: var(--muted);
+    }
+
+    .chip-value {
+      font-family: var(--mono);
+      color: #111827;
+    }
+
+    .chip-value.muted {
+      color: #9ca3af;
+    }
+
+    .btn-main {
+      border-radius: 999px;
+      border: 1px solid var(--accent);
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      color: #f9fafb;
+      padding: 7px 14px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      cursor: pointer;
+      box-shadow: 0 10px 26px rgba(37, 99, 235, 0.35);
+      transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+    }
+
+    .btn-main span.dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: #bbf7d0;
+      box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.45);
+    }
+
+    .btn-main:hover:not([disabled]) {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 32px rgba(37, 99, 235, 0.45);
+      filter: brightness(1.03);
+    }
+
+    .btn-main[disabled] {
+      opacity: 0.65;
+      cursor: not-allowed;
+      box-shadow: none;
+      filter: grayscale(0.15);
     }
 
     @media (max-width: 880px) {
-      .hero {
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .topbar-right {
+        justify-content: flex-start;
+      }
+    }
+
+    /* LAYOUT */
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.1fr);
+      gap: 16px;
+      margin-top: 8px;
+      align-items: flex-start;
+    }
+
+    @media (max-width: 960px) {
+      .layout {
         grid-template-columns: minmax(0, 1fr);
       }
     }
 
-    .hero-main {
-      padding: 18px 18px 16px;
-      border-radius: 20px;
-      border: 1px solid var(--border-strong);
-      background:
-        linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(239, 246, 255, 0.9));
+    /* Cards */
+
+    .card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
       box-shadow: var(--shadow-soft);
+      padding: 14px 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
       position: relative;
       overflow: hidden;
     }
 
-    .hero-main::before {
+    .card::before {
       content: "";
       position: absolute;
-      inset: -40%;
+      inset: 0;
       background:
-        radial-gradient(circle at 0 0, rgba(59, 130, 246, 0.12), transparent 60%),
-        radial-gradient(circle at 100% 100%, rgba(139, 92, 246, 0.08), transparent 60%);
-      opacity: 0.5;
+        radial-gradient(circle at 0 0, rgba(191, 219, 254, 0.35), transparent 55%),
+        radial-gradient(circle at 100% 100%, rgba(219, 234, 254, 0.5), transparent 60%);
+      opacity: 0.45;
       pointer-events: none;
     }
 
-    .hero-main-inner {
+    .card-inner {
       position: relative;
       z-index: 1;
       display: flex;
@@ -110,487 +244,249 @@
       gap: 10px;
     }
 
-    .badge-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 3px 9px;
-      border-radius: 999px;
-      border: 1px solid var(--border-strong);
-      background: rgba(255, 255, 255, 0.8);
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #111827;
+    }
+
+    .card-sub {
       font-size: 11px;
       color: var(--muted);
+    }
+
+    .pill {
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-card-soft);
+      padding: 3px 8px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .pill.good {
+      border-color: rgba(22, 163, 74, 0.7);
+      color: #166534;
+      background: #dcfce7;
+    }
+
+    .pill.warn {
+      border-color: rgba(234, 179, 8, 0.8);
+      color: #854d0e;
+      background: #fef9c3;
+    }
+
+    .pill.bad {
+      border-color: rgba(220, 38, 38, 0.8);
+      color: #991b1b;
+      background: #fee2e2;
+    }
+
+    .section-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+    }
+
+    /* Board column (RIGHT) */
+
+    .board-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .dart-board-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dart-board {
+      position: relative;
+      width: min(320px, 68vw);
+      aspect-ratio: 1 / 1;
+      border-radius: 999px;
+      background:
+        radial-gradient(circle at 50% 50%, #f9fafb 0, #e5e7eb 45%, #d1d5db 63%, #9ca3af 100%);
+      border: 1px solid rgba(156, 163, 175, 0.9);
+      box-shadow:
+        0 18px 30px rgba(15, 23, 42, 0.18),
+        0 0 0 1px rgba(148, 163, 184, 0.7);
+      cursor: crosshair;
+      overflow: hidden;
+    }
+
+    .dart-ring {
+      position: absolute;
+      inset: 18%;
+      border-radius: 999px;
+      border: 2px solid rgba(129, 140, 248, 0.6);
+    }
+
+    .dart-ring.inner {
+      inset: 34%;
+      border-color: rgba(34, 197, 94, 0.8);
+    }
+
+    .dart-ring.bull {
+      inset: 48%;
+      border-color: rgba(234, 179, 8, 0.9);
+      background: radial-gradient(circle, #facc15 0, #fde047 40%, transparent 70%);
+    }
+
+    .dart-axis {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.7), transparent);
+      transform-origin: center;
+      pointer-events: none;
+    }
+
+    .dart-axis.y {
+      transform: translate(-50%, -50%) rotate(90deg);
+    }
+
+    .dart-axis.x {
+      transform: translate(-50%, -50%);
+    }
+
+    .dart-click-marker {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      border: 2px solid #22c55e;
+      background: rgba(15, 23, 42, 0.95);
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.35);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.12s ease;
+    }
+
+    .dart-click-marker.visible {
+      opacity: 1;
+    }
+
+    .board-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .coords-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-card-soft);
+      padding: 2px 7px;
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
     }
 
     .badge-dot {
       width: 7px;
       height: 7px;
       border-radius: 999px;
-      background: var(--accent);
-      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25);
+      background: var(--ring-miss);
     }
 
-    .hero-title {
-      font-size: 23px;
-      font-weight: 700;
-      letter-spacing: 0.01em;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      align-items: baseline;
-      color: var(--ink);
+    .badge-dot.outer {
+      background: var(--ring-outer);
     }
 
-    .hero-title span.label {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
+    .badge-dot.inner {
+      background: var(--ring-inner);
     }
 
-    .hero-title span.highlight {
-      background: linear-gradient(120deg, #2563eb, #10b981);
-      -webkit-background-clip: text;
-      color: transparent;
+    .badge-dot.bull {
+      background: var(--ring-bull);
     }
 
-    .hero-sub {
-      font-size: 13px;
-      color: var(--muted);
-      max-width: 520px;
+    .badge-dot.miss {
+      background: var(--ring-miss);
     }
 
-    .hero-meta-row {
-      margin-top: 6px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    .hero-meta-row strong {
-      color: var(--ink);
-      font-weight: 500;
-    }
-
-    .tag-soft {
-      padding: 2px 7px;
-      border-radius: 999px;
-      border: 1px solid var(--border-strong);
-      background: rgba(248, 250, 252, 0.9);
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--muted);
-    }
-
-    .hero-connection {
-      padding: 15px 16px 14px;
-      border-radius: 18px;
-      border: 1px solid var(--border-strong);
-      background: var(--bg-card);
-      box-shadow: var(--shadow-card);
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .hero-connection-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .hero-connection-title {
-      font-size: 13px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-
-    .hero-connection-chiprow {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .chip {
-      border-radius: 999px;
-      border: 1px solid var(--border-strong);
-      background: var(--bg-card-alt);
-      padding: 4px 10px;
-      font-size: 11px;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .chip-label {
-      color: var(--muted-soft);
-      font-weight: 500;
-    }
-
-    .chip-value {
-      font-family: var(--mono);
-      font-size: 11px;
-      color: var(--ink);
-    }
-
-    .chip-value.muted {
-      color: var(--muted);
-    }
-
-    .mono {
-      font-family: var(--mono);
-    }
-
-    /* BUTTONS */
-
-    button {
-      font-family: inherit;
-      cursor: pointer;
-    }
+    /* Buttons + status */
 
     .btn {
       border-radius: 999px;
       border: 1px solid var(--border-strong);
-      background: #111827;
-      color: #f9fafb;
-      padding: 7px 15px;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
+      background: var(--bg-card-soft);
+      color: var(--ink);
+      font-size: 11px;
+      padding: 6px 12px;
       text-transform: uppercase;
+      letter-spacing: 0.12em;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
       transition: background 0.1s ease, transform 0.1s ease, box-shadow 0.1s ease, border-color 0.1s ease;
-      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.3);
-    }
-
-    .btn span.dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #22c55e;
-      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.35);
     }
 
     .btn:hover:not([disabled]) {
+      background: #e5edff;
       transform: translateY(-1px);
-      background: #0f172a;
-      border-color: var(--accent);
-      box-shadow: 0 14px 24px rgba(15, 23, 42, 0.4);
+      box-shadow: 0 6px 18px rgba(148, 163, 184, 0.7);
+      border-color: var(--accent-soft);
     }
 
     .btn[disabled] {
       opacity: 0.6;
       cursor: not-allowed;
       box-shadow: none;
+      transform: none;
     }
 
-    .btn-secondary {
-      background: #ffffff;
-      color: #111827;
-      border-color: var(--border-strong);
-      box-shadow: none;
+    .btn-accent {
+      background: linear-gradient(135deg, #3b82f6, #22c55e);
+      border-color: rgba(59, 130, 246, 0.9);
+      color: #eff6ff;
+      font-weight: 600;
     }
 
-    .btn-secondary:hover:not([disabled]) {
-      background: #eff6ff;
-      border-color: var(--accent);
-      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.16);
+    .btn-accent:hover:not([disabled]) {
+      filter: brightness(1.05);
     }
 
     .btn-ghost {
       background: transparent;
-      color: #111827;
       border-style: dashed;
-      box-shadow: none;
+      border-color: var(--border-strong);
     }
 
-    .btn-ghost:hover:not([disabled]) {
-      background: #e5e7eb;
-      border-style: solid;
-    }
-
-    .btn-small {
-      padding: 5px 11px;
-      font-size: 11px;
-    }
-
-    /* LAYOUT */
-
-    .grid-main {
-      display: grid;
-      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.6fr);
-      gap: 16px;
-      align-items: flex-start;
-    }
-
-    @media (max-width: 960px) {
-      .grid-main {
-        grid-template-columns: minmax(0, 1fr);
-      }
-    }
-
-    .stack {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .panel {
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--border-strong);
-      background: var(--bg-card);
-      box-shadow: var(--shadow-card);
-      padding: 13px 14px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 9px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .panel::before {
-      content: "";
-      position: absolute;
-      inset: -30%;
-      opacity: 0.2;
-      background:
-        radial-gradient(circle at 0 0, rgba(37, 99, 235, 0.16), transparent 60%),
-        radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.12), transparent 60%);
-      pointer-events: none;
-    }
-
-    .panel-inner {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 9px;
-    }
-
-    .panel-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 10px;
-    }
-
-    .panel-title {
-      font-size: 14px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #111827;
-    }
-
-    .panel-sub {
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    .panel-pill {
-      border-radius: 999px;
-      padding: 2px 8px;
-      border: 1px solid var(--border-strong);
+    .btn-sm {
+      padding: 5px 10px;
       font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--muted);
-      background: rgba(249, 250, 251, 0.9);
-    }
-
-    .panel-pill.ok {
-      border-color: rgba(22, 163, 74, 0.7);
-      color: #166534;
-      background: #dcfce7;
-    }
-
-    .panel-pill.bad {
-      border-color: rgba(220, 38, 38, 0.7);
-      color: #991b1b;
-      background: #fee2e2;
-    }
-
-    .rows {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .row-inline {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: flex-end;
-    }
-
-    .row-inline.stretch > * {
-      flex: 1 1 0;
-      min-width: 0;
-    }
-
-    /* INPUTS */
-
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      flex: 1 1 0;
-      min-width: 0;
-    }
-
-    .field-label {
-      font-size: 11px;
-      color: var(--muted);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-    }
-
-    .field-label span.title {
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-weight: 500;
-      color: #111827;
-    }
-
-    .field-label small {
-      font-size: 10px;
-      color: var(--muted-soft);
-    }
-
-    .input-shell {
-      border-radius: var(--radius-md);
-      border: 1px solid var(--border-soft);
-      background: #f9fafb;
-      padding: 6px 9px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .input-shell-alt {
-      border-radius: var(--radius-md);
-      border: 1px solid var(--border-soft);
-      background: #ffffff;
-      padding: 6px 8px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .input-shell input,
-    .input-shell-alt input {
-      border: none;
-      outline: none;
-      background: transparent;
-      width: 100%;
-      font-family: inherit;
-      font-size: 13px;
-      color: #111827;
-    }
-
-    .input-shell input::placeholder,
-    .input-shell-alt input::placeholder {
-      color: var(--muted-soft);
-      opacity: 0.9;
-    }
-
-    .input-suffix {
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    .input-prefix {
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    .field-helper {
-      font-size: 10px;
-      color: var(--muted);
-    }
-
-    .pill-mini {
-      border-radius: 999px;
-      border: 1px solid var(--border-strong);
-      padding: 1px 6px;
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: var(--muted);
-      background: #f9fafb;
-    }
-
-    /* STATS VIEW */
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 8px;
-    }
-
-    @media (max-width: 720px) {
-      .stats-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-    }
-
-    .stat-card {
-      border-radius: 12px;
-      border: 1px solid var(--border-soft);
-      background: #f9fafb;
-      padding: 7px 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .stat-card.primary {
-      grid-column: span 3;
-    }
-
-    @media (max-width: 720px) {
-      .stat-card.primary {
-        grid-column: span 2;
-      }
-    }
-
-    .stat-label {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--muted);
-    }
-
-    .stat-value {
-      font-size: 18px;
-      font-weight: 600;
-      font-family: var(--mono);
-      letter-spacing: 0.03em;
-      color: #111827;
-    }
-
-    .stat-value.muted {
-      color: var(--muted-soft);
-      font-size: 14px;
-    }
-
-    .stat-handle {
-      font-size: 10px;
-      font-family: var(--mono);
-      color: var(--muted);
-      word-break: break-all;
     }
 
     .status-line {
@@ -604,454 +500,348 @@
 
     .status-line strong {
       color: var(--ink);
-      font-weight: 500;
     }
 
-    .status-line span.bad {
-      color: var(--danger);
+    /* Result cards */
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+      gap: 10px;
     }
 
-    .status-line span.good {
-      color: #15803d;
+    @media (max-width: 720px) {
+      .result-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
     }
 
-    .status-line span.weak {
+    .result-card {
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--bg-card-soft);
+      padding: 9px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .result-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
       color: var(--muted);
     }
 
-    .hint-pill {
-      display: inline-flex;
-      align-items: center;
+    .result-main {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .result-main.miss {
+      color: var(--ring-miss);
+    }
+
+    .result-main.outer {
+      color: var(--ring-outer);
+    }
+
+    .result-main.inner {
+      color: var(--ring-inner);
+    }
+
+    .result-main.bull {
+      color: var(--ring-bull);
+    }
+
+    .result-sub {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .handle-text {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: #6b7280;
+      word-break: break-all;
+    }
+
+    .https-note {
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .https-note strong {
+      color: var(--ink);
+    }
+
+    /* Admin */
+
+    .admin-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    @media (max-width: 720px) {
+      .admin-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      font-size: 11px;
+    }
+
+    .field-label {
+      display: flex;
+      justify-content: space-between;
       gap: 6px;
-      font-size: 10px;
-      padding: 3px 8px;
-      border-radius: 999px;
-      border: 1px dashed var(--border-strong);
-      color: var(--muted);
-      background: #f9fafb;
-    }
-
-    .hint-pill span.dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 999px;
-      background: #9ca3af;
-    }
-
-    .note-https {
-      font-size: 10px;
       color: var(--muted);
     }
 
-    .note-https strong {
+    .field-label span.title {
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
       color: #111827;
-      font-weight: 500;
+      font-size: 10px;
     }
 
-    .note-https.ok strong {
-      color: #15803d;
+    .field-label small {
+      font-size: 10px;
     }
 
-    .note-https.warn strong {
-      color: #b45309;
-    }
-
-    .status-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 2px 8px;
+    .input-shell {
       border-radius: 999px;
       border: 1px solid var(--border-strong);
+      background: #f9fafb;
+      padding: 5px 9px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .input-shell input {
+      border: none;
+      outline: none;
+      background: transparent;
+      color: #111827;
+      font-family: var(--sans);
+      font-size: 12px;
+      width: 100%;
+    }
+
+    .input-shell input::placeholder {
+      color: #9ca3af;
+    }
+
+    .input-suffix {
       font-size: 10px;
       color: var(--muted);
-      background: #f9fafb;
+      white-space: nowrap;
     }
 
-    .status-chip span.dot-ok {
-      width: 7px;
-      height: 7px;
-      border-radius: 999px;
-      background: #22c55e;
-      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.3);
-    }
-
-    .status-chip span.dot-bad {
-      width: 7px;
-      height: 7px;
-      border-radius: 999px;
-      background: #dc2626;
-      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.28);
-    }
-
-    .status-text-ok {
-      color: #15803d;
-    }
-
-    .status-text-bad {
-      color: #b91c1c;
-    }
-
-    .status-text-muted {
+    .field-note {
+      font-size: 10px;
       color: var(--muted);
+    }
+
+    .mono {
+      font-family: var(--mono);
     }
   </style>
 </head>
 <body>
-  <div class="page">
-    <!-- HERO -->
-    <header class="hero">
-      <section class="hero-main">
-        <div class="hero-main-inner">
-          <div class="badge-pill">
-            <span class="badge-dot"></span>
-            <span>Private on-chain character growth</span>
-          </div>
-          <div class="hero-title">
-            <span class="label">Zama FHEVM</span>
-            <span>•</span>
-            <span class="highlight">Encrypted Character Progress</span>
-          </div>
-          <p class="hero-sub">
-            Level up your on-chain hero without leaking XP or skill values.
-            All stats live encrypted on-chain; only you can decrypt them locally through the Relayer SDK.
-          </p>
-          <div class="hero-meta-row">
-            <span class="tag-soft">XP &amp; skills: fully encrypted</span>
-            <span>Game contract lives on <strong>Ethereum Sepolia</strong> using FHEVM.</span>
-          </div>
-        </div>
-      </section>
-
-      <section class="hero-connection">
-        <div class="hero-connection-header">
-          <div class="hero-connection-title">Wallet &amp; network</div>
-          <button id="connectBtn" class="btn btn-small">
-            <span class="dot"></span>
-            <span id="connectLabel">Connect wallet</span>
-          </button>
-        </div>
-        <div class="hero-connection-chiprow">
+  <div class="app">
+    <!-- HEADER -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-title">Secret Darts</div>
+        <div class="brand-sub">Click the target, encrypt (x, y), and let Zama FHEVM classify your hit.</div>
+      </div>
+      <div class="topbar-right">
+        <div class="chip-row">
           <div class="chip">
             <span class="chip-label">Network</span>
-            <span class="chip-value muted" id="netLabel">—</span>
+            <span id="netLabel" class="chip-value muted">—</span>
           </div>
           <div class="chip">
             <span class="chip-label">You</span>
-            <span class="chip-value muted" id="accountLabel">not connected</span>
+            <span id="accountLabel" class="chip-value muted">not connected</span>
+          </div>
+          <div class="chip">
+            <span class="chip-label">Contract</span>
+            <span id="contractLabel" class="chip-value mono">—</span>
           </div>
         </div>
-        <div class="hero-connection-chiprow">
-          <div class="chip">
-            <span class="chip-label">Character contract</span>
-            <span class="chip-value mono" id="contractLabel">—</span>
+        <button id="connectBtn" class="btn-main">
+          <span class="dot"></span>
+          <span id="connectBtnLabel">Connect wallet</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <!-- LEFT COLUMN: RESULT + ADMIN -->
+      <section class="card">
+        <div class="card-inner">
+          <!-- Result card -->
+          <div class="card-header">
+            <div>
+              <div class="card-title">2. Decrypt your ring</div>
+              <div class="card-sub">
+                The contract stores only encrypted coordinates and ring code. Decrypt the last shot locally via the Relayer.
+              </div>
+            </div>
+            <span id="decryptTag" class="pill warn">decrypt</span>
           </div>
-          <div class="chip">
-            <span class="chip-label">HTTPS decrypt</span>
-            <span class="chip-value muted" id="httpsLabel">recommended</span>
+
+          <div class="status-line">
+            <span>After throwing a dart, use <strong>Decrypt last shot</strong> to reveal where it landed.</span>
+            <button id="decryptBtn" class="btn btn-sm btn-ghost">Decrypt last shot</button>
+          </div>
+
+          <div class="result-grid">
+            <div class="result-card">
+              <div class="result-title">Ring outcome</div>
+              <div id="ringMain" class="result-main miss">—</div>
+              <div id="ringSub" class="result-sub">
+                No shot recorded yet.
+              </div>
+            </div>
+            <div class="result-card">
+              <div class="result-title">Distance & HTTPS</div>
+              <div id="distMain" class="result-main" style="font-size:16px;">—</div>
+              <div id="distSub" class="result-sub">Squared distance to center in encrypted space.</div>
+              <div id="httpsNote" class="https-note" style="margin-top:4px;">
+                Decryption runs best over <strong>HTTPS</strong> or a secure localhost origin.
+              </div>
+            </div>
+          </div>
+
+          <div class="result-card">
+            <div class="result-title">Last encrypted handles</div>
+            <div class="result-sub">These are ciphertext handles only; clear values stay inside your browser.</div>
+            <div id="handlesCoords" class="handle-text" style="margin-top:4px;">
+              x: —<br />y: —
+            </div>
+            <div id="handlesDistRing" class="handle-text" style="margin-top:4px;">
+              dist²: —<br />ring: —
+            </div>
+          </div>
+
+          <!-- Admin -->
+          <div class="card-header" style="margin-top:6px;">
+            <div>
+              <div class="card-title">3. Admin · Board radii</div>
+              <div class="card-sub">
+                Owner-only: configure squared distance thresholds for outer / inner / bull rings.
+              </div>
+            </div>
+            <span id="adminRoleTag" class="pill">role: unknown</span>
+          </div>
+
+          <div class="admin-grid">
+            <div class="field">
+              <label class="field-label">
+                <span class="title">Outer radius²</span>
+                <small>uint16</small>
+              </label>
+              <div class="input-shell">
+                <input id="outerInput" type="number" min="1" max="65535" placeholder="e.g. 3200" />
+                <span class="input-suffix">dist²</span>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">
+                <span class="title">Inner radius²</span>
+                <small>uint16</small>
+              </label>
+              <div class="input-shell">
+                <input id="innerInput" type="number" min="1" max="65535" placeholder="e.g. 1200" />
+                <span class="input-suffix">dist²</span>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">
+                <span class="title">Bull radius²</span>
+                <small>uint16</small>
+              </label>
+              <div class="input-shell">
+                <input id="bullInput" type="number" min="1" max="65535" placeholder="e.g. 200" />
+                <span class="input-suffix">dist²</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="status-line" style="margin-top:4px;">
+            <button id="refreshBoardBtn" class="btn btn-sm btn-ghost">Refresh from contract</button>
+            <button id="updateBoardBtn" class="btn btn-sm btn-ghost">Update board config</button>
+          </div>
+          <div id="adminStatus" class="status-line"></div>
+        </div>
+      </section>
+
+      <!-- RIGHT COLUMN: BOARD + THROW -->
+      <section class="card">
+        <div class="card-inner board-wrapper">
+          <div class="card-header">
+            <div>
+              <div class="card-title">1. Throw an encrypted dart</div>
+              <div class="card-sub">
+                Click anywhere on the target to choose coordinates. Only the encrypted (x, y) are sent to the FHEVM contract.
+              </div>
+            </div>
+            <span id="boardStateTag" class="pill">board: n/a</span>
+          </div>
+
+          <div class="dart-board-container">
+            <div id="dartBoard" class="dart-board">
+              <div class="dart-axis x"></div>
+              <div class="dart-axis y"></div>
+              <div class="dart-ring outer"></div>
+              <div class="dart-ring inner"></div>
+              <div class="dart-ring bull"></div>
+              <div id="dartMarker" class="dart-click-marker"></div>
+            </div>
+          </div>
+
+          <div class="board-meta">
+            <div class="section-label">Local selection</div>
+            <div class="coords-row">
+              <div class="badge">
+                <span>Coordinates:</span>
+                <span id="coordDisplay" class="mono">(none)</span>
+              </div>
+            </div>
+            <div class="coords-row" style="margin-top:2px;">
+              <div class="badge">
+                <span class="badge-dot outer"></span>
+                <span>Outer ring</span>
+              </div>
+              <div class="badge">
+                <span class="badge-dot inner"></span>
+                <span>Inner ring</span>
+              </div>
+              <div class="badge">
+                <span class="badge-dot bull"></span>
+                <span>Bull</span>
+              </div>
+              <div class="badge">
+                <span class="badge-dot miss"></span>
+                <span>Miss</span>
+              </div>
+            </div>
+            <button id="throwBtn" class="btn btn-accent" style="margin-top:6px;">
+              Throw encrypted dart
+            </button>
+            <div id="throwStatus" class="status-line"></div>
           </div>
         </div>
       </section>
-    </header>
-
-    <!-- MAIN GRID -->
-    <main class="grid-main">
-      <!-- LEFT: CREATE / UPDATE -->
-      <div class="stack">
-        <!-- CHARACTER BASE INFO -->
-        <section class="panel">
-          <div class="panel-inner">
-            <div class="panel-header">
-              <div>
-                <div class="panel-title">Character slot</div>
-                <div class="panel-sub">
-                  Choose which in-game character ID you want to use with this wallet.
-                </div>
-              </div>
-              <div id="characterMetaTag" class="panel-pill">no character loaded</div>
-            </div>
-            <div class="rows">
-              <div class="row-inline stretch">
-                <div class="field">
-                  <label class="field-label">
-                    <span class="title">Character ID</span>
-                    <small>integer &gt;= 1</small>
-                  </label>
-                  <div class="input-shell-alt">
-                    <span class="input-prefix">#</span>
-                    <input id="characterIdInput" type="number" min="1" value="1" />
-                  </div>
-                  <div class="field-helper">
-                    Each wallet can host multiple encrypted characters (1, 2, 3, ...).
-                  </div>
-                </div>
-                <div class="field" style="max-width: 150px;">
-                  <label class="field-label">
-                    <span class="title">Quick actions</span>
-                  </label>
-                  <div class="row-inline">
-                    <button id="useChar1Btn" class="btn-ghost btn-small">Use #1</button>
-                    <button id="useChar2Btn" class="btn-ghost btn-small">Use #2</button>
-                  </div>
-                  <div class="field-helper">
-                    Only affects the ID used in forms below.
-                  </div>
-                </div>
-              </div>
-
-              <div class="status-line">
-                <span id="characterMetaStatus">No on-chain check performed yet.</span>
-                <button id="checkMetaBtn" class="btn-secondary btn-small">Check character on-chain</button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- CREATE CHARACTER -->
-        <section class="panel">
-          <div class="panel-inner">
-            <div class="panel-header">
-              <div>
-                <div class="panel-title">Create encrypted character</div>
-                <div class="panel-sub">
-                  Encrypt initial XP &amp; skills client-side and store them on-chain as opaque ciphertexts.
-                </div>
-              </div>
-              <div class="panel-pill">step 1 • init</div>
-            </div>
-
-            <div class="rows">
-              <div class="row-inline stretch">
-                <div class="field">
-                  <label class="field-label">
-                    <span class="title">Initial XP</span>
-                    <small>uint32 • encrypted</small>
-                  </label>
-                  <div class="input-shell">
-                    <input id="createXpInput" type="number" min="0" max="4294967295" placeholder="e.g. 100" />
-                    <span class="input-suffix">xp</span>
-                  </div>
-                  <div class="field-helper">
-                    XP is stored as <span class="mono">euint32</span> under FHE.
-                  </div>
-                </div>
-              </div>
-
-              <div class="row-inline stretch">
-                <div class="field">
-                  <label class="field-label">
-                    <span class="title">Skill I</span>
-                    <small>uint16 • encrypted</small>
-                  </label>
-                  <div class="input-shell">
-                    <input id="createSkill1Input" type="number" min="0" max="65535" placeholder="e.g. 5" />
-                    <span class="input-suffix">points</span>
-                  </div>
-                </div>
-                <div class="field">
-                  <label class="field-label">
-                    <span class="title">Skill II</span>
-                    <small>uint16 • encrypted</small>
-                  </label>
-                  <div class="input-shell">
-                    <input id="createSkill2Input" type="number" min="0" max="65535" placeholder="e.g. 3" />
-                    <span class="input-suffix">points</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="row-inline stretch">
-                <div class="field">
-                  <label class="field-label">
-                    <span class="title">Skill III</span>
-                    <small>uint16 • encrypted</small>
-                  </label>
-                  <div class="input-shell">
-                    <input id="createSkill3Input" type="number" min="0" max="65535" placeholder="e.g. 1" />
-                    <span class="input-suffix">points</span>
-                  </div>
-                </div>
-                <div class="field">
-                  <label class="field-label">
-                    <span class="title">Skill IV</span>
-                    <small>uint16 • encrypted</small>
-                  </label>
-                  <div class="input-shell">
-                    <input id="createSkill4Input" type="number" min="0" max="65535" placeholder="e.g. 0" />
-                    <span class="input-suffix">points</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="row-inline" style="justify-content: space-between; gap: 10px;">
-                <button id="createCharacterBtn" class="btn btn-small">
-                  <span class="dot"></span>
-                  <span>Create encrypted character</span>
-                </button>
-                <span id="createStatus" class="field-helper"></span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- UPDATE CHARACTER -->
-        <section class="panel">
-          <div class="panel-inner">
-            <div class="panel-header">
-              <div>
-                <div class="panel-title">Apply encrypted progress</div>
-                <div class="panel-sub">
-                  Add XP and skill gains as encrypted deltas, without ever revealing raw values to the chain.
-                </div>
-              </div>
-              <div class="panel-pill">step 2 • grow</div>
-            </div>
-
-            <div class="rows">
-              <div class="row-inline stretch">
-                <div class="field">
-                  <label class="field-label">
-                    <span class="title">XP delta</span>
-                    <small>uint32 • encrypted</small>
-                  </label>
-                  <div class="input-shell">
-                    <input id="deltaXpInput" type="number" min="0" max="4294967295" placeholder="e.g. 50" />
-                    <span class="input-suffix">xp</span>
-                  </div>
-                  <div class="field-helper">
-                    Only non-negative deltas are supported (no XP refunds).
-                  </div>
-                </div>
-              </div>
-
-              <div class="row-inline stretch">
-                <div class="field">
-                  <label class="field-label">
-                    <span class="title">Skill I delta</span>
-                    <small>uint16 • encrypted</small>
-                  </label>
-                  <div class="input-shell">
-                    <input id="deltaSkill1Input" type="number" min="0" max="65535" placeholder="e.g. 1" />
-                    <span class="input-suffix">pts</span>
-                  </div>
-                </div>
-                <div class="field">
-                  <label class="field-label">
-                    <span class="title">Skill II delta</span>
-                    <small>uint16 • encrypted</small>
-                  </label>
-                  <div class="input-shell">
-                    <input id="deltaSkill2Input" type="number" min="0" max="65535" placeholder="0" />
-                    <span class="input-suffix">pts</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="row-inline stretch">
-                <div class="field">
-                  <label class="field-label">
-                    <span class="title">Skill III delta</span>
-                    <small>uint16 • encrypted</small>
-                  </label>
-                  <div class="input-shell">
-                    <input id="deltaSkill3Input" type="number" min="0" max="65535" placeholder="0" />
-                    <span class="input-suffix">pts</span>
-                  </div>
-                </div>
-                <div class="field">
-                  <label class="field-label">
-                    <span class="title">Skill IV delta</span>
-                    <small>uint16 • encrypted</small>
-                  </label>
-                  <div class="input-shell">
-                    <input id="deltaSkill4Input" type="number" min="0" max="65535" placeholder="0" />
-                    <span class="input-suffix">pts</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="row-inline" style="justify-content: space-between; gap: 10px;">
-                <button id="updateCharacterBtn" class="btn-secondary btn-small">
-                  <span>Encrypt &amp; apply progress</span>
-                </button>
-                <span id="updateStatus" class="field-helper"></span>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <!-- RIGHT: DECRYPT VIEW -->
-      <div class="stack">
-        <section class="panel">
-          <div class="panel-inner">
-            <div class="panel-header">
-              <div>
-                <div class="panel-title">Decrypt my encrypted stats</div>
-                <div class="panel-sub">
-                  Use EIP-712 signing with the Relayer SDK to privately view XP &amp; skills for the selected character.
-                </div>
-              </div>
-              <div id="decryptStatusTag" class="panel-pill">decrypt: HTTPS recommended</div>
-            </div>
-
-            <div class="rows">
-              <div class="row-inline" style="justify-content: space-between; gap: 10px;">
-                <div class="hint-pill">
-                  <span class="dot"></span>
-                  <span>Decryption keys live ephemerally in your browser only.</span>
-                </div>
-                <button id="decryptStatsBtn" class="btn-ghost btn-small">
-                  Decrypt stats for this ID
-                </button>
-              </div>
-
-              <div class="note-https" id="httpsNote">
-                For the <strong>userDecrypt</strong> flow, serving the app over HTTPS is recommended so the WASM worker can run safely.
-              </div>
-
-              <div class="stats-grid">
-                <div class="stat-card primary">
-                  <div class="stat-label">XP (cleartext — local only)</div>
-                  <div id="xpValue" class="stat-value muted">—</div>
-                  <div id="xpHandle" class="stat-handle">xp handle: —</div>
-                </div>
-
-                <div class="stat-card">
-                  <div class="stat-label">Skill I</div>
-                  <div id="skill1Value" class="stat-value muted">—</div>
-                  <div id="skill1Handle" class="stat-handle">handle: —</div>
-                </div>
-                <div class="stat-card">
-                  <div class="stat-label">Skill II</div>
-                  <div id="skill2Value" class="stat-value muted">—</div>
-                  <div id="skill2Handle" class="stat-handle">handle: —</div>
-                </div>
-                <div class="stat-card">
-                  <div class="stat-label">Skill III</div>
-                  <div id="skill3Value" class="stat-value muted">—</div>
-                  <div id="skill3Handle" class="stat-handle">handle: —</div>
-                </div>
-                <div class="stat-card">
-                  <div class="stat-label">Skill IV</div>
-                  <div id="skill4Value" class="stat-value muted">—</div>
-                  <div id="skill4Handle" class="stat-handle">handle: —</div>
-                </div>
-              </div>
-
-              <div class="status-line">
-                <span id="decryptStatusLine" class="status-text-muted">
-                  Stats are decrypted locally via the Relayer SDK and never sent back on-chain.
-                </span>
-                <span id="characterExistenceTag" class="status-chip">
-                  <span class="dot-bad"></span>
-                  <span>No encrypted character yet</span>
-                </span>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
     </main>
   </div>
 
@@ -1063,75 +853,78 @@
     await initSDK();
 
     /* ---------- CONFIG ---------- */
-    const CONTRACT_ADDRESS = "0xb039733e15Bb03a0b3CDA2B02c45700bD8E2A5EF";
-    const CHAIN_ID_HEX = "0xaa36a7"; // Ethereum Sepolia
+    const CONTRACT_ADDRESS = "0xc7808D5dA3745632A818CEf9bD8B76CD081845c4";
+    const CHAIN_ID_HEX = "0xaa36a7"; // Sepolia
 
     const ORIGIN = window.location.origin;
-    const HAS_LOCAL_PROXY = ORIGIN.includes("localhost:3443") || ORIGIN.includes("127.0.0.1:3443");
+    const HAS_LOCAL_PROXY =
+      ORIGIN.includes("localhost:3443") || ORIGIN.includes("127.0.0.1:3443");
     const RELAYER_URL = HAS_LOCAL_PROXY ? `${ORIGIN}/relayer` : "https://relayer.testnet.zama.org";
     const GATEWAY_URL = HAS_LOCAL_PROXY ? `${ORIGIN}/gateway` : "https://gateway.testnet.zama.org";
 
-    const IS_HTTPS = location.protocol === "https:";
+    const IS_HTTPS = location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1";
 
-    // ABI for EncryptedCharacterProgress
+    // ABI for SecretDarts
     const ABI = [
       { type: "function", name: "owner", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
       { type: "function", name: "transferOwnership", stateMutability: "nonpayable", inputs: [{ name: "newOwner", type: "address" }], outputs: [] },
 
       {
         type: "function",
-        name: "createCharacter",
+        name: "setBoardConfig",
         stateMutability: "nonpayable",
         inputs: [
-          { name: "characterId", type: "uint256" },
-          { name: "encXp", type: "bytes32" },
-          { name: "encSkill1", type: "bytes32" },
-          { name: "encSkill2", type: "bytes32" },
-          { name: "encSkill3", type: "bytes32" },
-          { name: "encSkill4", type: "bytes32" },
+          { name: "_bullRadius2", type: "uint16" },
+          { name: "_innerRadius2", type: "uint16" },
+          { name: "_outerRadius2", type: "uint16" }
+        ],
+        outputs: []
+      },
+      {
+        type: "function",
+        name: "bullRadius2",
+        stateMutability: "view",
+        inputs: [],
+        outputs: [{ type: "uint16" }]
+      },
+      {
+        type: "function",
+        name: "innerRadius2",
+        stateMutability: "view",
+        inputs: [],
+        outputs: [{ type: "uint16" }]
+      },
+      {
+        type: "function",
+        name: "outerRadius2",
+        stateMutability: "view",
+        inputs: [],
+        outputs: [{ type: "uint16" }]
+      },
+      {
+        type: "function",
+        name: "boardConfigured",
+        stateMutability: "view",
+        inputs: [],
+        outputs: [{ type: "bool" }]
+      },
+      {
+        type: "function",
+        name: "throwDart",
+        stateMutability: "nonpayable",
+        inputs: [
+          { name: "encX", type: "bytes32" },
+          { name: "encY", type: "bytes32" },
           { name: "proof", type: "bytes" }
         ],
         outputs: []
       },
-
       {
         type: "function",
-        name: "updateCharacterProgress",
-        stateMutability: "nonpayable",
-        inputs: [
-          { name: "characterId", type: "uint256" },
-          { name: "encDeltaXp", type: "bytes32" },
-          { name: "encDeltaSkill1", type: "bytes32" },
-          { name: "encDeltaSkill2", type: "bytes32" },
-          { name: "encDeltaSkill3", type: "bytes32" },
-          { name: "encDeltaSkill4", type: "bytes32" },
-          { name: "proof", type: "bytes" }
-        ],
-        outputs: []
-      },
-
-      {
-        type: "function",
-        name: "getCharacterMeta",
+        name: "getMyLastShotHandles",
         stateMutability: "view",
-        inputs: [
-          { name: "player", type: "address" },
-          { name: "characterId", type: "uint256" }
-        ],
+        inputs: [],
         outputs: [
-          { type: "bool" }
-        ]
-      },
-
-      {
-        type: "function",
-        name: "getMyCharacterHandles",
-        stateMutability: "view",
-        inputs: [
-          { name: "characterId", type: "uint256" }
-        ],
-        outputs: [
-          { type: "bytes32" },
           { type: "bytes32" },
           { type: "bytes32" },
           { type: "bytes32" },
@@ -1139,15 +932,11 @@
           { type: "bool" }
         ]
       },
-
       {
         type: "function",
-        name: "getCharacterXpHandleForOwner",
+        name: "getPlayerRingHandle",
         stateMutability: "view",
-        inputs: [
-          { name: "player", type: "address" },
-          { name: "characterId", type: "uint256" }
-        ],
+        inputs: [{ name: "player", type: "address" }],
         outputs: [
           { type: "bytes32" },
           { type: "bool" }
@@ -1158,53 +947,37 @@
     /* ---------- DOM ---------- */
     const $ = (id) => document.getElementById(id);
 
-    const connectBtn            = $("connectBtn");
-    const connectLabelEl        = $("connectLabel");
-    const netLabelEl            = $("netLabel");
-    const accountLabelEl        = $("accountLabel");
-    const contractLabelEl       = $("contractLabel");
-    const httpsLabelEl          = $("httpsLabel");
+    const netLabelEl = $("netLabel");
+    const accountLabelEl = $("accountLabel");
+    const contractLabelEl = $("contractLabel");
 
-    const characterIdInputEl    = $("characterIdInput");
-    const useChar1Btn           = $("useChar1Btn");
-    const useChar2Btn           = $("useChar2Btn");
-    const characterMetaTagEl    = $("characterMetaTag");
-    const characterMetaStatusEl = $("characterMetaStatus");
-    const checkMetaBtn          = $("checkMetaBtn");
+    const connectBtn = $("connectBtn");
+    const connectBtnLabelEl = $("connectBtnLabel");
 
-    const createXpInputEl       = $("createXpInput");
-    const createSkill1InputEl   = $("createSkill1Input");
-    const createSkill2InputEl   = $("createSkill2Input");
-    const createSkill3InputEl   = $("createSkill3Input");
-    const createSkill4InputEl   = $("createSkill4Input");
-    const createCharacterBtn    = $("createCharacterBtn");
-    const createStatusEl        = $("createStatus");
+    const dartBoardEl = $("dartBoard");
+    const dartMarkerEl = $("dartMarker");
+    const coordDisplayEl = $("coordDisplay");
+    const throwBtn = $("throwBtn");
+    const throwStatusEl = $("throwStatus");
 
-    const deltaXpInputEl        = $("deltaXpInput");
-    const deltaSkill1InputEl    = $("deltaSkill1Input");
-    const deltaSkill2InputEl    = $("deltaSkill2Input");
-    const deltaSkill3InputEl    = $("deltaSkill3Input");
-    const deltaSkill4InputEl    = $("deltaSkill4Input");
-    const updateCharacterBtn    = $("updateCharacterBtn");
-    const updateStatusEl        = $("updateStatus");
+    const decryptBtn = $("decryptBtn");
+    const decryptTagEl = $("decryptTag");
+    const ringMainEl = $("ringMain");
+    const ringSubEl = $("ringSub");
+    const distMainEl = $("distMain");
+    const distSubEl = $("distSub");
+    const httpsNoteEl = $("httpsNote");
+    const handlesCoordsEl = $("handlesCoords");
+    const handlesDistRingEl = $("handlesDistRing");
+    const boardStateTagEl = $("boardStateTag");
 
-    const decryptStatsBtn       = $("decryptStatsBtn");
-    const decryptStatusTagEl    = $("decryptStatusTag");
-    const httpsNoteEl           = $("httpsNote");
-    const decryptStatusLineEl   = $("decryptStatusLine");
-    const characterExistenceTagEl = $("characterExistenceTag");
-
-    const xpValueEl             = $("xpValue");
-    const skill1ValueEl         = $("skill1Value");
-    const skill2ValueEl         = $("skill2Value");
-    const skill3ValueEl         = $("skill3Value");
-    const skill4ValueEl         = $("skill4Value");
-
-    const xpHandleEl            = $("xpHandle");
-    const skill1HandleEl        = $("skill1Handle");
-    const skill2HandleEl        = $("skill2Handle");
-    const skill3HandleEl        = $("skill3Handle");
-    const skill4HandleEl        = $("skill4Handle");
+    const adminRoleTagEl = $("adminRoleTag");
+    const outerInputEl = $("outerInput");
+    const innerInputEl = $("innerInput");
+    const bullInputEl = $("bullInput");
+    const refreshBoardBtn = $("refreshBoardBtn");
+    const updateBoardBtn = $("updateBoardBtn");
+    const adminStatusEl = $("adminStatus");
 
     contractLabelEl.textContent = shortAddress(CONTRACT_ADDRESS);
 
@@ -1214,11 +987,12 @@
       signer: null,
       contract: null,
       relayer: null,
-      account: null
+      account: null,
+      owner: null,
+      lastClick: null // { xUnits, yUnits }
     };
 
-    /* ---------- HELPERS: LOGGING & BIGINT ---------- */
-
+    /* ---------- HELPERS: LOGGING + BIGINT ---------- */
     const safeStringify = (obj) =>
       JSON.stringify(obj, (k, v) => (typeof v === "bigint" ? v.toString() + "n" : v), 2);
 
@@ -1236,13 +1010,7 @@
               })()
         )
         .join(" ");
-
-      const tagStyle =
-        "background:#111827;color:#bfdbfe;border-radius:999px;padding:2px 6px;font-size:10px;font-weight:700;font-family:system-ui, sans-serif;";
-      const msgStyle =
-        "color:#0f172a;font-family:ui-monospace,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;";
-
-      console.log("%cFHE-CHAR%c " + msg, tagStyle, msgStyle);
+      console.log("[secret-darts]", msg);
     }
 
     function normalizeDecryptedValue(v) {
@@ -1310,10 +1078,10 @@
       return after === CHAIN_ID_HEX;
     }
 
+    // Build value picker from userDecrypt output
     function buildValuePicker(out, pairs) {
       let map = {};
       if (out && typeof out === "object") {
-        // Layout 1: clearValues array + known order
         if (Array.isArray(out.clearValues) && pairs && pairs.length) {
           pairs.forEach((p, i) => {
             const h = String(p.handle || p).toLowerCase();
@@ -1321,13 +1089,7 @@
           });
         }
 
-        // Layout 2: abiEncodedClearValues (concatenated 32-byte words)
-        if (
-          !Object.keys(map).length &&
-          typeof out.abiEncodedClearValues === "string" &&
-          pairs &&
-          pairs.length
-        ) {
+        if (!Object.keys(map).length && typeof out.abiEncodedClearValues === "string" && pairs && pairs.length) {
           const raw = out.abiEncodedClearValues.startsWith("0x")
             ? out.abiEncodedClearValues.slice(2)
             : out.abiEncodedClearValues;
@@ -1346,7 +1108,6 @@
           });
         }
 
-        // Layout 3: simple map of handle -> value
         if (!Object.keys(map).length) {
           for (const [k, v] of Object.entries(out)) {
             map[k.toLowerCase()] = v;
@@ -1392,72 +1153,79 @@
 
     function updateHttpsUi() {
       if (IS_HTTPS) {
-        httpsLabelEl.textContent = "secure ✓";
-        decryptStatusTagEl.textContent = "decrypt: HTTPS ✓";
-        decryptStatusTagEl.classList.remove("bad");
-        decryptStatusTagEl.classList.add("ok");
-        httpsNoteEl.classList.remove("warn");
-        httpsNoteEl.classList.add("ok");
+        decryptTagEl.textContent = "decrypt:✓";
+        decryptTagEl.classList.remove("warn", "bad");
+        decryptTagEl.classList.add("good");
+        httpsNoteEl.innerHTML =
+          'Decryptions are running in a <strong>secure context</strong>.';
       } else {
-        httpsLabelEl.textContent = "not secure";
-        decryptStatusTagEl.textContent = "decrypt: open via HTTPS for full support";
-        decryptStatusTagEl.classList.remove("ok");
-        decryptStatusTagEl.classList.add("bad");
-        httpsNoteEl.classList.remove("ok");
-        httpsNoteEl.classList.add("warn");
+        decryptTagEl.textContent = "decrypt";
+        decryptTagEl.classList.remove("good");
+        decryptTagEl.classList.add("warn");
+        httpsNoteEl.innerHTML =
+          'Running on a non-HTTPS origin. <strong>userDecrypt</strong> may be limited by browser security.';
       }
     }
 
-    function setCharacterExistence(exists) {
-      if (!characterExistenceTagEl) return;
-      if (exists) {
-        characterExistenceTagEl.innerHTML =
-          '<span class="dot-ok"></span><span>Encrypted character exists</span>';
-      } else {
-        characterExistenceTagEl.innerHTML =
-          '<span class="dot-bad"></span><span>No encrypted character yet</span>';
-      }
+    function encodeCoordForUint16(n) {
+      // Map from signed [-32768, 32767] to uint16; here n is small (e.g. [-180, 180])
+      const asInt = Math.trunc(n);
+      const encoded = (asInt + 65536) % 65536;
+      return encoded;
     }
 
-    function setCharacterMetaTag(exists) {
-      const charId = Number(characterIdInputEl.value || "0");
-      if (!exists) {
-        characterMetaTagEl.textContent = `character #${charId || "?"} • not created`;
-        characterMetaTagEl.classList.remove("ok");
-        characterMetaTagEl.classList.add("bad");
-      } else {
-        characterMetaTagEl.textContent = `character #${charId} • encrypted stats live on-chain`;
-        characterMetaTagEl.classList.remove("bad");
-        characterMetaTagEl.classList.add("ok");
-      }
+    function decodeCoordFromUint16(v) {
+      const num = Number(v);
+      return num > 32767 ? num - 65536 : num;
     }
 
-    function clearStatsView() {
-      xpValueEl.textContent = "—";
-      xpValueEl.classList.add("muted");
-      skill1ValueEl.textContent = "—";
-      skill1ValueEl.classList.add("muted");
-      skill2ValueEl.textContent = "—";
-      skill2ValueEl.classList.add("muted");
-      skill3ValueEl.textContent = "—";
-      skill3ValueEl.classList.add("muted");
-      skill4ValueEl.textContent = "—";
-      skill4ValueEl.classList.add("muted");
+    function setBoardStateTag(configured, radii) {
+      if (!configured) {
+        boardStateTagEl.textContent = "board: not configured";
+        boardStateTagEl.classList.remove("good");
+        boardStateTagEl.classList.add("warn");
+        return;
+      }
+      const outer = radii.outer;
+      const inner = radii.inner;
+      const bull = radii.bull;
+      boardStateTagEl.textContent = `board: bull ${bull}, inner ${inner}, outer ${outer}`;
+      boardStateTagEl.classList.remove("warn");
+      boardStateTagEl.classList.add("good");
+    }
 
-      xpHandleEl.textContent = "xp handle: —";
-      skill1HandleEl.textContent = "handle: —";
-      skill2HandleEl.textContent = "handle: —";
-      skill3HandleEl.textContent = "handle: —";
-      skill4HandleEl.textContent = "handle: —";
+    function setRingUi(ringNum) {
+      const classes = ["miss", "outer", "inner", "bull"];
+      ringMainEl.classList.remove("miss", "outer", "inner", "bull");
 
-      decryptStatusLineEl.textContent =
-        "Stats are decrypted locally via the Relayer SDK and never sent back on-chain.";
-      decryptStatusLineEl.classList.remove("status-text-ok", "status-text-bad");
-      decryptStatusLineEl.classList.add("status-text-muted");
+      let label = "—";
+      let desc = "No shot recorded yet.";
+      let cls = "miss";
+
+      if (ringNum === 0) {
+        label = "Miss";
+        desc = "Your encrypted distance landed outside the scoring rings.";
+        cls = "miss";
+      } else if (ringNum === 1) {
+        label = "Outer ring";
+        desc = "You hit the outer scoring ring under FHE.";
+        cls = "outer";
+      } else if (ringNum === 2) {
+        label = "Inner ring";
+        desc = "Clean inner ring hit – closer to the center.";
+        cls = "inner";
+      } else if (ringNum === 3) {
+        label = "Bull";
+        desc = "Bullseye! You nailed the center in encrypted space.";
+        cls = "bull";
+      }
+
+      ringMainEl.textContent = label;
+      ringMainEl.classList.add(cls);
+      ringSubEl.textContent = desc;
     }
 
     /* ---------- CONNECTION ---------- */
-
     connectBtn.addEventListener("click", async () => {
       if (state.signer) {
         await disconnectWallet();
@@ -1496,16 +1264,30 @@
         state.relayer = relayer;
         state.account = account;
 
-        connectLabelEl.textContent = "Disconnect";
-        connectBtn.classList.remove("btn-secondary");
+        connectBtnLabelEl.textContent = "Disconnect";
         accountLabelEl.textContent = shortAddress(account);
         accountLabelEl.classList.remove("muted");
         netLabelEl.textContent = CHAIN_ID_HEX;
 
         appendLog("Relayer ready:", { relayerUrl: RELAYER_URL, gatewayUrl: GATEWAY_URL });
 
+        // Detect owner
+        try {
+          const owner = await contract.owner();
+          state.owner = owner;
+          if (owner.toLowerCase() === account.toLowerCase()) {
+            adminRoleTagEl.textContent = "role: owner";
+            adminRoleTagEl.classList.add("good");
+          } else {
+            adminRoleTagEl.textContent = "role: viewer";
+          }
+        } catch (e) {
+          appendLog("owner() read failed:", e?.message || e);
+          adminRoleTagEl.textContent = "role: unknown";
+        }
+
         updateHttpsUi();
-        await refreshCharacterMeta();
+        await refreshBoardConfig();
       } catch (e) {
         const msg = e?.reason || e?.shortMessage || e?.message || String(e);
         appendLog("Connect failed:", msg);
@@ -1519,325 +1301,276 @@
       state.contract = null;
       state.relayer = null;
       state.account = null;
+      state.owner = null;
 
-      connectLabelEl.textContent = "Connect wallet";
+      connectBtnLabelEl.textContent = "Connect wallet";
       accountLabelEl.textContent = "not connected";
       accountLabelEl.classList.add("muted");
-      setCharacterExistence(false);
-      setCharacterMetaTag(false);
-      clearStatsView();
+      adminRoleTagEl.textContent = "role: unknown";
+      adminStatusEl.textContent = "";
+      throwStatusEl.textContent = "";
+
+      ringMainEl.textContent = "—";
+      ringMainEl.classList.remove("miss", "outer", "inner", "bull");
+      ringMainEl.classList.add("miss");
+      ringSubEl.textContent = "No shot recorded yet.";
+      distMainEl.textContent = "—";
+      distSubEl.textContent = "Squared distance to center in encrypted space.";
+      handlesCoordsEl.textContent = "x: —\ny: —";
+      handlesDistRingEl.textContent = "dist²: —\nring: —";
+      setBoardStateTag(false, { outer: 0, inner: 0, bull: 0 });
 
       appendLog("Disconnected");
     }
 
-    /* ---------- CHARACTER META ---------- */
+    /* ---------- BOARD CONFIG (ADMIN) ---------- */
+    refreshBoardBtn.addEventListener("click", () => {
+      refreshBoardConfig();
+    });
 
-    async function refreshCharacterMeta() {
+    updateBoardBtn.addEventListener("click", async () => {
       try {
-        if (!state.contract || !state.account) {
-          characterMetaStatusEl.textContent = "Connect wallet first.";
-          setCharacterExistence(false);
-          setCharacterMetaTag(false);
-          return;
+        if (!state.contract || !state.signer || !state.relayer || !state.account) {
+          throw new Error("Connect wallet first.");
         }
-        const charId = Number(characterIdInputEl.value || "0");
-        if (!Number.isInteger(charId) || charId <= 0) {
-          characterMetaStatusEl.textContent = "Character ID must be a positive integer.";
-          setCharacterExistence(false);
-          setCharacterMetaTag(false);
-          return;
+        if (!state.owner || state.owner.toLowerCase() !== state.account.toLowerCase()) {
+          throw new Error("Only contract owner can update board config.");
         }
 
-        characterMetaStatusEl.textContent = "Checking on-chain…";
-        const exists = await state.contract.getCharacterMeta(state.account, BigInt(charId));
-        characterMetaStatusEl.textContent = exists
-          ? `Encrypted character #${charId} exists for this wallet.`
-          : `No encrypted character #${charId} found for this wallet.`;
+        const outer = Number(outerInputEl.value || "0");
+        const inner = Number(innerInputEl.value || "0");
+        const bull = Number(bullInputEl.value || "0");
 
-        setCharacterExistence(exists);
-        setCharacterMetaTag(exists);
+        for (const [name, v] of [
+          ["Outer radius²", outer],
+          ["Inner radius²", inner],
+          ["Bull radius²", bull]
+        ]) {
+          if (!Number.isInteger(v) || v <= 0 || v > 65535) {
+            throw new Error(`${name} must be an integer between 1 and 65535.`);
+          }
+        }
+
+        if (!(bull < inner && inner < outer)) {
+          throw new Error("Expected: bullRadius² < innerRadius² < outerRadius².");
+        }
+
+        adminStatusEl.textContent = "Updating board config...";
+        const tx = await state.contract.setBoardConfig(
+          BigInt(bull),
+          BigInt(inner),
+          BigInt(outer)
+        );
+
+        adminStatusEl.textContent = "Tx sent: " + tx.hash.slice(0, 10) + "…";
+        appendLog("setBoardConfig tx:", tx.hash);
+
+        await tx.wait();
+        adminStatusEl.textContent = "Board config updated ✓";
+
+        await refreshBoardConfig();
       } catch (e) {
         const msg = e?.reason || e?.shortMessage || e?.message || String(e);
-        appendLog("getCharacterMeta error:", msg);
-        characterMetaStatusEl.textContent = msg;
-        setCharacterExistence(false);
-        setCharacterMetaTag(false);
+        adminStatusEl.textContent = msg;
+        appendLog("setBoardConfig error:", msg);
+        alert(msg);
+      }
+    });
+
+    async function refreshBoardConfig() {
+      try {
+        if (!state.contract) {
+          setBoardStateTag(false, { outer: 0, inner: 0, bull: 0 });
+          return;
+        }
+        const configured = await state.contract.boardConfigured();
+        if (!configured) {
+          setBoardStateTag(false, { outer: 0, inner: 0, bull: 0 });
+          return;
+        }
+
+        const outer = await state.contract.outerRadius2();
+        const inner = await state.contract.innerRadius2();
+        const bull = await state.contract.bullRadius2();
+
+        const outerNum = Number(outer);
+        const innerNum = Number(inner);
+        const bullNum = Number(bull);
+
+        outerInputEl.value = String(outerNum);
+        innerInputEl.value = String(innerNum);
+        bullInputEl.value = String(bullNum);
+
+        setBoardStateTag(true, { outer: outerNum, inner: innerNum, bull: bullNum });
+      } catch (e) {
+        const msg = e?.reason || e?.shortMessage || e?.message || String(e);
+        appendLog("refreshBoardConfig error:", msg);
+        setBoardStateTag(false, { outer: 0, inner: 0, bull: 0 });
       }
     }
 
-    checkMetaBtn.addEventListener("click", () => {
-      refreshCharacterMeta();
+    /* ---------- BOARD INTERACTION ---------- */
+    dartBoardEl.addEventListener("click", (ev) => {
+      const rect = dartBoardEl.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const px = ev.clientX - cx;
+      const py = cy - ev.clientY; // invert y for math
+
+      const radiusPx = rect.width / 2;
+      const scale = 180 / radiusPx; // map to approx [-180, 180]
+
+      const xUnits = Math.round(px * scale);
+      const yUnits = Math.round(py * scale);
+
+      state.lastClick = { xUnits, yUnits };
+
+      coordDisplayEl.textContent = `(${xUnits}, ${yUnits})`;
+
+      // Move marker
+      const relX = (px / radiusPx) * 50; // %
+      const relY = (-py / radiusPx) * 50;
+      dartMarkerEl.style.left = `${50 + relX}%`;
+      dartMarkerEl.style.top = `${50 + relY}%`;
+      dartMarkerEl.classList.add("visible");
+
+      throwStatusEl.textContent = "Coordinates selected. Ready to encrypt and throw.";
     });
 
-    useChar1Btn.addEventListener("click", () => {
-      characterIdInputEl.value = "1";
-      refreshCharacterMeta();
-      clearStatsView();
-    });
-
-    useChar2Btn.addEventListener("click", () => {
-      characterIdInputEl.value = "2";
-      refreshCharacterMeta();
-      clearStatsView();
-    });
-
-    characterIdInputEl.addEventListener("change", () => {
-      refreshCharacterMeta();
-      clearStatsView();
-    });
-
-    /* ---------- CREATE CHARACTER ---------- */
-
-    createCharacterBtn.addEventListener("click", async () => {
-      try {
-        if (!state.contract || !state.signer || !state.relayer || !state.account) {
-          throw new Error("Connect your wallet first.");
-        }
-
-        const charId = Number(characterIdInputEl.value || "0");
-        if (!Number.isInteger(charId) || charId <= 0) {
-          throw new Error("Character ID must be a positive integer.");
-        }
-
-        const xpRaw = createXpInputEl.value.trim();
-        const s1Raw = createSkill1InputEl.value.trim();
-        const s2Raw = createSkill2InputEl.value.trim();
-        const s3Raw = createSkill3InputEl.value.trim();
-        const s4Raw = createSkill4InputEl.value.trim();
-
-        const xp = Number(xpRaw || "0");
-        const s1 = Number(s1Raw || "0");
-        const s2 = Number(s2Raw || "0");
-        const s3 = Number(s3Raw || "0");
-        const s4 = Number(s4Raw || "0");
-
-        if (!Number.isInteger(xp) || xp < 0 || xp > 4294967295) {
-          throw new Error("Initial XP must be between 0 and 4,294,967,295.");
-        }
-        for (const [name, v] of [
-          ["Skill I", s1],
-          ["Skill II", s2],
-          ["Skill III", s3],
-          ["Skill IV", s4]
-        ]) {
-          if (!Number.isInteger(v) || v < 0 || v > 65535) {
-            throw new Error(`${name} must be between 0 and 65,535.`);
-          }
-        }
-
-        createStatusEl.textContent = "Encrypting initial stats…";
-
-        const buf = state.relayer.createEncryptedInput(CONTRACT_ADDRESS, state.account);
-        buf.add32(xp);
-        buf.add16(s1);
-        buf.add16(s2);
-        buf.add16(s3);
-        buf.add16(s4);
-
-        const { handles, inputProof } = await buf.encrypt();
-        appendLog("createCharacter encrypted handles:", handles);
-
-        const tx = await state.contract.createCharacter(
-          BigInt(charId),
-          handles[0],
-          handles[1],
-          handles[2],
-          handles[3],
-          handles[4],
-          inputProof
-        );
-
-        createStatusEl.textContent = "Transaction sent: " + tx.hash.slice(0, 10) + "…";
-        appendLog("createCharacter tx:", tx.hash);
-
-        await tx.wait();
-        createStatusEl.textContent = "Encrypted character created ✓";
-        appendLog("createCharacter confirmed");
-
-        await refreshCharacterMeta();
-        clearStatsView();
-      } catch (e) {
-        const msg = e?.reason || e?.shortMessage || e?.message || String(e);
-        createStatusEl.textContent = msg;
-        appendLog("createCharacter error:", msg);
-        alert(msg);
-      }
-    });
-
-    /* ---------- UPDATE CHARACTER PROGRESS ---------- */
-
-    updateCharacterBtn.addEventListener("click", async () => {
-      try {
-        if (!state.contract || !state.signer || !state.relayer || !state.account) {
-          throw new Error("Connect your wallet first.");
-        }
-
-        const charId = Number(characterIdInputEl.value || "0");
-        if (!Number.isInteger(charId) || charId <= 0) {
-          throw new Error("Character ID must be a positive integer.");
-        }
-
-        const xpRaw = deltaXpInputEl.value.trim();
-        const d1Raw = deltaSkill1InputEl.value.trim();
-        const d2Raw = deltaSkill2InputEl.value.trim();
-        const d3Raw = deltaSkill3InputEl.value.trim();
-        const d4Raw = deltaSkill4InputEl.value.trim();
-
-        const dxp = Number(xpRaw || "0");
-        const d1 = Number(d1Raw || "0");
-        const d2 = Number(d2Raw || "0");
-        const d3 = Number(d3Raw || "0");
-        const d4 = Number(d4Raw || "0");
-
-        if (!Number.isInteger(dxp) || dxp < 0 || dxp > 4294967295) {
-          throw new Error("XP delta must be between 0 and 4,294,967,295.");
-        }
-        for (const [name, v] of [
-          ["Skill I delta", d1],
-          ["Skill II delta", d2],
-          ["Skill III delta", d3],
-          ["Skill IV delta", d4]
-        ]) {
-          if (!Number.isInteger(v) || v < 0 || v > 65535) {
-            throw new Error(`${name} must be between 0 and 65,535.`);
-          }
-        }
-
-        updateStatusEl.textContent = "Encrypting deltas…";
-
-        const buf = state.relayer.createEncryptedInput(CONTRACT_ADDRESS, state.account);
-        buf.add32(dxp);
-        buf.add16(d1);
-        buf.add16(d2);
-        buf.add16(d3);
-        buf.add16(d4);
-
-        const { handles, inputProof } = await buf.encrypt();
-        appendLog("updateCharacterProgress encrypted handles:", handles);
-
-        const tx = await state.contract.updateCharacterProgress(
-          BigInt(charId),
-          handles[0],
-          handles[1],
-          handles[2],
-          handles[3],
-          handles[4],
-          inputProof
-        );
-
-        updateStatusEl.textContent = "Transaction sent: " + tx.hash.slice(0, 10) + "…";
-        appendLog("updateCharacterProgress tx:", tx.hash);
-
-        await tx.wait();
-        updateStatusEl.textContent = "Encrypted progress applied ✓";
-        appendLog("updateCharacterProgress confirmed");
-
-        await refreshCharacterMeta();
-      } catch (e) {
-        const msg = e?.reason || e?.shortMessage || e?.message || String(e);
-        updateStatusEl.textContent = msg;
-        appendLog("updateCharacterProgress error:", msg);
-        alert(msg);
-      }
-    });
-
-    /* ---------- DECRYPT STATS ---------- */
-
-    decryptStatsBtn.addEventListener("click", async () => {
+    /* ---------- THROW ENCRYPTED DART ---------- */
+    throwBtn.addEventListener("click", async () => {
       try {
         if (!state.contract || !state.relayer || !state.signer || !state.account) {
-          throw new Error("Connect your wallet first.");
+          throw new Error("Connect wallet first.");
+        }
+        if (!state.lastClick) {
+          throw new Error("Click on the board to choose coordinates first.");
+        }
+
+        const configured = await state.contract.boardConfigured();
+        if (!configured) {
+          throw new Error("Board not configured on-chain yet.");
+        }
+
+        const { xUnits, yUnits } = state.lastClick;
+        const encX = encodeCoordForUint16(xUnits);
+        const encY = encodeCoordForUint16(yUnits);
+
+        throwStatusEl.textContent = "Encrypting (x, y)…";
+
+        const buf = state.relayer.createEncryptedInput(CONTRACT_ADDRESS, state.account);
+        buf.add16(encX);
+        buf.add16(encY);
+
+        const { handles, inputProof } = await buf.encrypt();
+        appendLog("throwDart handles:", handles);
+
+        const tx = await state.contract.throwDart(
+          handles[0],
+          handles[1],
+          inputProof
+        );
+
+        throwStatusEl.textContent = "Transaction sent: " + tx.hash.slice(0, 10) + "…";
+        appendLog("throwDart tx:", tx.hash);
+
+        await tx.wait();
+        throwStatusEl.textContent = "Encrypted dart recorded ✓";
+
+        // Clear last visible result until user decrypts again
+        ringMainEl.textContent = "—";
+        ringMainEl.classList.remove("miss", "outer", "inner", "bull");
+        ringMainEl.classList.add("miss");
+        ringSubEl.textContent = "Decrypt to see where you landed.";
+
+        distMainEl.textContent = "—";
+        distSubEl.textContent = "Squared distance to center in encrypted space.";
+
+        handlesCoordsEl.textContent = "x: —\ny: —";
+        handlesDistRingEl.textContent = "dist²: —\nring: —";
+      } catch (e) {
+        const msg = e?.reason || e?.shortMessage || e?.message || String(e);
+        throwStatusEl.textContent = msg;
+        appendLog("throwDart error:", msg);
+        alert(msg);
+      }
+    });
+
+    /* ---------- DECRYPT LAST SHOT ---------- */
+    decryptBtn.addEventListener("click", async () => {
+      try {
+        if (!state.contract || !state.relayer || !state.signer || !state.account) {
+          throw new Error("Connect wallet first.");
         }
         if (!IS_HTTPS) {
-          appendLog("userDecrypt requested on non-HTTPS origin.");
+          appendLog("userDecrypt on non-HTTPS origin (may be restricted).");
         }
 
-        const charId = Number(characterIdInputEl.value || "0");
-        if (!Number.isInteger(charId) || charId <= 0) {
-          throw new Error("Character ID must be a positive integer.");
-        }
+        const r = await state.contract.getMyLastShotHandles();
+        const xH = r?.[0];
+        const yH = r?.[1];
+        const dist2H = r?.[2];
+        const ringH = r?.[3];
+        const decided = !!r?.[4];
 
-        decryptStatusLineEl.textContent = "Fetching encrypted handles & decrypting via Relayer…";
-        decryptStatusLineEl.classList.remove("status-text-bad", "status-text-ok");
-        decryptStatusLineEl.classList.add("status-text-muted");
-
-        const r = await state.contract.getMyCharacterHandles(BigInt(charId));
-        const xpH = r?.[0];
-        const s1H = r?.[1];
-        const s2H = r?.[2];
-        const s3H = r?.[3];
-        const s4H = r?.[4];
-        const exists = !!r?.[5];
-
-        setCharacterExistence(exists);
-        setCharacterMetaTag(exists);
-
-        if (!exists || !xpH) {
-          clearStatsView();
-          decryptStatusLineEl.textContent =
-            "No encrypted stats found for this character ID yet. Create the character first.";
-          decryptStatusLineEl.classList.remove("status-text-ok");
-          decryptStatusLineEl.classList.add("status-text-bad");
+        if (!decided || !xH || !yH || !ringH) {
+          setRingUi(0);
+          distMainEl.textContent = "—";
+          distSubEl.textContent = "No shot recorded yet.";
+          handlesCoordsEl.textContent = "x: —\ny: —";
+          handlesDistRingEl.textContent = "dist²: —\nring: —";
           return;
         }
 
-        xpHandleEl.textContent = "xp handle: " + String(xpH);
-        skill1HandleEl.textContent = "handle: " + String(s1H || "—");
-        skill2HandleEl.textContent = "handle: " + String(s2H || "—");
-        skill3HandleEl.textContent = "handle: " + String(s3H || "—");
-        skill4HandleEl.textContent = "handle: " + String(s4H || "—");
+        handlesCoordsEl.textContent = `x: ${String(xH)}\ny: ${String(yH)}`;
+        handlesDistRingEl.textContent = `dist²: ${String(dist2H)}\nring: ${String(ringH)}`;
 
         const pairs = [
-          { handle: xpH, contractAddress: CONTRACT_ADDRESS },
-          { handle: s1H, contractAddress: CONTRACT_ADDRESS },
-          { handle: s2H, contractAddress: CONTRACT_ADDRESS },
-          { handle: s3H, contractAddress: CONTRACT_ADDRESS },
-          { handle: s4H, contractAddress: CONTRACT_ADDRESS }
+          { handle: xH, contractAddress: CONTRACT_ADDRESS },
+          { handle: yH, contractAddress: CONTRACT_ADDRESS },
+          { handle: dist2H, contractAddress: CONTRACT_ADDRESS },
+          { handle: ringH, contractAddress: CONTRACT_ADDRESS }
         ];
 
         const { out, pairs: used } = await userDecryptMany(state.relayer, state.signer, pairs);
         const pick = buildValuePicker(out, used);
 
-        const xpVal = pick(xpH);
-        const s1Val = pick(s1H);
-        const s2Val = pick(s2H);
-        const s3Val = pick(s3H);
-        const s4Val = pick(s4H);
+        const xVal = pick(xH);
+        const yVal = pick(yH);
+        const distVal = pick(dist2H);
+        const ringVal = pick(ringH);
 
-        xpValueEl.textContent = xpVal != null ? xpVal.toString() : "n/a";
-        xpValueEl.classList.remove("muted");
+        const ringBig = ringVal != null ? ringVal : 0n;
+        const ringNum = Number(ringBig);
 
-        skill1ValueEl.textContent = s1Val != null ? s1Val.toString() : "n/a";
-        skill1ValueEl.classList.remove("muted");
+        setRingUi(ringNum);
 
-        skill2ValueEl.textContent = s2Val != null ? s2Val.toString() : "n/a";
-        skill2ValueEl.classList.remove("muted");
+        if (distVal != null) {
+          const dNum = Number(distVal);
+          distMainEl.textContent = `d² = ${dNum}`;
+          const approx = Math.sqrt(dNum);
+          const approxClean = Math.round(approx * 10) / 10;
+          distSubEl.textContent = `Approximate distance from center: ~${approxClean} units.`;
+        } else {
+          distMainEl.textContent = "n/a";
+          distSubEl.textContent = "Could not decrypt squared distance.";
+        }
 
-        skill3ValueEl.textContent = s3Val != null ? s3Val.toString() : "n/a";
-        skill3ValueEl.classList.remove("muted");
-
-        skill4ValueEl.textContent = s4Val != null ? s4Val.toString() : "n/a";
-        skill4ValueEl.classList.remove("muted");
-
-        decryptStatusLineEl.textContent =
-          "Decryption successful. Numbers above were computed locally and never sent back to the chain.";
-        decryptStatusLineEl.classList.remove("status-text-bad", "status-text-muted");
-        decryptStatusLineEl.classList.add("status-text-ok");
+        if (xVal != null && yVal != null) {
+          const dx = decodeCoordFromUint16(xVal);
+          const dy = decodeCoordFromUint16(yVal);
+          coordDisplayEl.textContent = `(${dx}, ${dy})`;
+        }
       } catch (e) {
         const msg = e?.reason || e?.shortMessage || e?.message || String(e);
-        appendLog("decryptStats error:", msg);
-        decryptStatusLineEl.textContent = msg;
-        decryptStatusLineEl.classList.remove("status-text-ok");
-        decryptStatusLineEl.classList.add("status-text-bad");
+        appendLog("decrypt error:", msg);
         alert(msg);
       }
     });
 
     /* ---------- INIT ---------- */
     updateHttpsUi();
-    clearStatsView();
-    setCharacterExistence(false);
-    setCharacterMetaTag(false);
+    setBoardStateTag(false, { outer: 0, inner: 0, bull: 0 });
 
     // Auto-connect if already authorized
     if (window.ethereum) {
