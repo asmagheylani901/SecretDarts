@@ -1,19 +1,38 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+/**
+ * SecretDarts
+ *
+ * Privacy-preserving darts mini-game on Zama FHEVM:
+ *
+ * - User encrypts dart hit coordinates (x, y) in the browser with the Relayer SDK.
+ * - Contract computes squared distance to the center under FHE.
+ * - Contract maps the encrypted distance to an encrypted ring code:
+ *      0 = miss
+ *      1 = outer ring
+ *      2 = inner ring
+ *      3 = bull
+ * - User decrypts their own result locally via userDecrypt.
+ *
+ * The contract never sees clear coordinates or distances – only ciphertexts and
+ * clear radius thresholds configured by the owner.
+ */
 
 import {
   FHE,
+  ebool,
   euint16,
-  euint32,
-  externalEuint16,
-  externalEuint32
+  externalEuint16
 } from "@fhevm/solidity/lib/FHE.sol";
 
 import { ZamaEthereumConfig } from "@fhevm/solidity/config/ZamaConfig.sol";
 
-contract EncryptedCharacterProgress is ZamaEthereumConfig {
-  // -------- Ownable --------
+contract SecretDarts is ZamaEthereumConfig {
+  // ---------------------------------------------------------------------------
+  // Ownership
+  // ---------------------------------------------------------------------------
+
   address public owner;
 
   modifier onlyOwner() {
@@ -30,7 +49,10 @@ contract EncryptedCharacterProgress is ZamaEthereumConfig {
     owner = newOwner;
   }
 
-  // -------- Simple nonReentrant guard (future-proof for payable flows) --------
+  // ---------------------------------------------------------------------------
+  // Simple nonReentrant guard (future-proof for payable flows)
+  // ---------------------------------------------------------------------------
+
   uint256 private _locked = 1;
 
   modifier nonReentrant() {
@@ -41,204 +63,185 @@ contract EncryptedCharacterProgress is ZamaEthereumConfig {
   }
 
   // ---------------------------------------------------------------------------
-  // Encrypted character stats
+  // Board configuration (squared radii)
   //
-  // We model a character as:
-  // - eXp:     encrypted XP (euint32)
-  // - eSkill1: encrypted skill 1 (euint16)
-  // - eSkill2: encrypted skill 2 (euint16)
-  // - eSkill3: encrypted skill 3 (euint16)
-  // - eSkill4: encrypted skill 4 (euint16)
+  // Coordinates are assumed to be already centered in the frontend, i.e.
+  // (0,0) is the board center and x,y are small enough that x^2 + y^2 fits
+  // into uint16 without overflow. The owner configures thresholds in terms of
+  // squared distance:
   //
-  // All fields are opaque ciphertexts on-chain.
-  // Only the player has decrypt rights via ACL + userDecrypt().
+  //   dist2 <= bullRadius2   -> bull (3)
+  //   dist2 <= innerRadius2  -> inner ring (2)
+  //   dist2 <= outerRadius2  -> outer ring (1)
+  //   else                   -> miss (0)
   // ---------------------------------------------------------------------------
 
-  struct CharacterStats {
-    bool exists;
-    euint32 eXp;
-    euint16 eSkill1;
-    euint16 eSkill2;
-    euint16 eSkill3;
-    euint16 eSkill4;
-  }
+  uint16 public bullRadius2;   // smallest radius (bull)
+  uint16 public innerRadius2;  // middle ring
+  uint16 public outerRadius2;  // biggest scoring ring
+  bool   public boardConfigured;
 
-  // player => characterId => stats
-  mapping(address => mapping(uint256 => CharacterStats)) private characters;
-
-  event CharacterCreated(
-    address indexed player,
-    uint256 indexed characterId,
-    bytes32 xpHandle,
-    bytes32 skill1Handle,
-    bytes32 skill2Handle,
-    bytes32 skill3Handle,
-    bytes32 skill4Handle
+  event BoardConfigured(
+    uint16 bullRadius2,
+    uint16 innerRadius2,
+    uint16 outerRadius2
   );
-
-  event CharacterUpdated(
-    address indexed player,
-    uint256 indexed characterId,
-    bytes32 xpHandle,
-    bytes32 skill1Handle,
-    bytes32 skill2Handle,
-    bytes32 skill3Handle,
-    bytes32 skill4Handle
-  );
-
-  // ---------------------------------------------------------------------------
-  // Character creation
-  // ---------------------------------------------------------------------------
 
   /**
-   * Create a new character with fully encrypted initial stats.
+   * Configure dartboard distance thresholds.
    *
-   * Frontend flow (high-level):
-   * 1) Off-chain, call relayer.createEncryptedInput(contractAddress, player).
-   * 2) Add fields in this exact order:
-   *      - add32(initialXp)
-   *      - add16(initialSkill1)
-   *      - add16(initialSkill2)
-   *      - add16(initialSkill3)
-   *      - add16(initialSkill4)
-   * 3) Call encrypt() to get { handles, inputProof }.
-   * 4) Map handles[0..4] to:
-   *      - encXp        -> externalEuint32
-   *      - encSkill1/2/3/4 -> externalEuint16
-   *    Pass the same inputProof to this function.
+   * @param _bullRadius2   squared radius for bull (center)
+   * @param _innerRadius2  squared radius for inner ring
+   * @param _outerRadius2  squared radius for outer ring
    *
-   * The contract:
-   * - Imports the ciphertexts using FHE.fromExternal.
-   * - Grants itself long-term ACL (FHE.allowThis).
-   * - Grants the player decrypt rights (FHE.allow(..., msg.sender)).
+   * Invariants expected (but not strictly enforced):
+   *   0 < bullRadius2 < innerRadius2 < outerRadius2
    */
-  function createCharacter(
-    uint256 characterId,
-    externalEuint32 encXp,
-    externalEuint16 encSkill1,
-    externalEuint16 encSkill2,
-    externalEuint16 encSkill3,
-    externalEuint16 encSkill4,
-    bytes calldata proof
-  ) external nonReentrant {
-    CharacterStats storage C = characters[msg.sender][characterId];
-    require(!C.exists, "Character already exists");
-
-    // Ingest all encrypted fields from the same proof batched by the gateway
-    euint32 eXp = FHE.fromExternal(encXp, proof);
-    euint16 eSkill1 = FHE.fromExternal(encSkill1, proof);
-    euint16 eSkill2 = FHE.fromExternal(encSkill2, proof);
-    euint16 eSkill3 = FHE.fromExternal(encSkill3, proof);
-    euint16 eSkill4 = FHE.fromExternal(encSkill4, proof);
-
-    // Allow this contract to perform future FHE operations on these ciphertexts
-    FHE.allowThis(eXp);
-    FHE.allowThis(eSkill1);
-    FHE.allowThis(eSkill2);
-    FHE.allowThis(eSkill3);
-    FHE.allowThis(eSkill4);
-
-    // Allow the player to decrypt their own stats via userDecrypt
-    FHE.allow(eXp, msg.sender);
-    FHE.allow(eSkill1, msg.sender);
-    FHE.allow(eSkill2, msg.sender);
-    FHE.allow(eSkill3, msg.sender);
-    FHE.allow(eSkill4, msg.sender);
-
-    C.exists = true;
-    C.eXp = eXp;
-    C.eSkill1 = eSkill1;
-    C.eSkill2 = eSkill2;
-    C.eSkill3 = eSkill3;
-    C.eSkill4 = eSkill4;
-
-    emit CharacterCreated(
-      msg.sender,
-      characterId,
-      FHE.toBytes32(C.eXp),
-      FHE.toBytes32(C.eSkill1),
-      FHE.toBytes32(C.eSkill2),
-      FHE.toBytes32(C.eSkill3),
-      FHE.toBytes32(C.eSkill4)
+  function setBoardConfig(
+    uint16 _bullRadius2,
+    uint16 _innerRadius2,
+    uint16 _outerRadius2
+  ) external onlyOwner {
+    require(_bullRadius2 > 0, "bullRadius2 must be > 0");
+    require(
+      _bullRadius2 < _innerRadius2 &&
+      _innerRadius2 < _outerRadius2,
+      "invalid radius ordering"
     );
+
+    bullRadius2   = _bullRadius2;
+    innerRadius2  = _innerRadius2;
+    outerRadius2  = _outerRadius2;
+    boardConfigured = true;
+
+    emit BoardConfigured(_bullRadius2, _innerRadius2, _outerRadius2);
   }
 
   // ---------------------------------------------------------------------------
-  // Character progression (encrypted updates)
+  // Player shots (encrypted state)
+  // ---------------------------------------------------------------------------
+
+  struct ShotOutcome {
+    euint16 eX;         // encrypted x coordinate
+    euint16 eY;         // encrypted y coordinate
+    euint16 eDist2;     // encrypted squared distance to center
+    euint16 eRingCode;  // encrypted ring code: 0=miss,1=outer,2=inner,3=bull
+    bool    decided;    // true after at least one shot
+  }
+
+  // player => last shot outcome
+  mapping(address => ShotOutcome) private shots;
+
+  event ShotTaken(
+    address indexed player,
+    bytes32 xHandle,
+    bytes32 yHandle,
+    bytes32 dist2Handle,
+    bytes32 ringCodeHandle
+  );
+
+  // ---------------------------------------------------------------------------
+  // Main game function
   // ---------------------------------------------------------------------------
 
   /**
-   * Apply encrypted XP and skill increments to an existing character.
+   * Throw a dart with encrypted coordinates.
    *
    * Frontend flow (high-level):
-   * 1) Off-chain, compute increments (deltaXp, deltaSkill1..4).
-   * 2) Encrypt them with relayer.createEncryptedInput in this order:
-   *      - add32(deltaXp)
-   *      - add16(deltaSkill1)
-   *      - add16(deltaSkill2)
-   *      - add16(deltaSkill3)
-   *      - add16(deltaSkill4)
-   * 3) Call encrypt() to get { handles, inputProof }.
-   * 4) Map handles[0..4] to encDeltaXp / encDeltaSkill* and call this function.
-   *
-   * Notes:
-   * - All updates happen under FHE using FHE.add.
-   * - The contract never sees plaintext deltas or resulting stats.
+   * 1) User clicks on a graphical board to pick (x,y) in some integer grid.
+   * 2) Frontend centers and normalizes coordinates around (0,0).
+   * 3) Frontend encrypts both x and y using Relayer SDK:
+   *      const buf = relayer.createEncryptedInput(contractAddr, userAddr);
+   *      buf.add16(x);
+   *      buf.add16(y);
+   *      const { handles, inputProof } = await buf.encrypt();
+   * 4) Call this function with:
+   *      throwDart(handles[0], handles[1], inputProof)
+   * 5) Use getMyLastShotHandles(...) + userDecrypt(...) to reveal ring code.
    */
-  function updateCharacterProgress(
-    uint256 characterId,
-    externalEuint32 encDeltaXp,
-    externalEuint16 encDeltaSkill1,
-    externalEuint16 encDeltaSkill2,
-    externalEuint16 encDeltaSkill3,
-    externalEuint16 encDeltaSkill4,
+  function throwDart(
+    externalEuint16 encX,
+    externalEuint16 encY,
     bytes calldata proof
   ) external nonReentrant {
-    CharacterStats storage C = characters[msg.sender][characterId];
-    require(C.exists, "Character does not exist");
+    require(boardConfigured, "Board not configured");
+    require(proof.length != 0, "missing proof");
 
-    // Ingest encrypted increments
-    euint32 eDeltaXp = FHE.fromExternal(encDeltaXp, proof);
-    euint16 eDeltaSkill1 = FHE.fromExternal(encDeltaSkill1, proof);
-    euint16 eDeltaSkill2 = FHE.fromExternal(encDeltaSkill2, proof);
-    euint16 eDeltaSkill3 = FHE.fromExternal(encDeltaSkill3, proof);
-    euint16 eDeltaSkill4 = FHE.fromExternal(encDeltaSkill4, proof);
+    ShotOutcome storage S = shots[msg.sender];
 
-    // Contract needs rights to operate on increments as well
-    FHE.allowThis(eDeltaXp);
-    FHE.allowThis(eDeltaSkill1);
-    FHE.allowThis(eDeltaSkill2);
-    FHE.allowThis(eDeltaSkill3);
-    FHE.allowThis(eDeltaSkill4);
+    // Ingest encrypted coordinates
+    euint16 eX = FHE.fromExternal(encX, proof);
+    euint16 eY = FHE.fromExternal(encY, proof);
 
-    // Add encrypted deltas to encrypted state
-    C.eXp = FHE.add(C.eXp, eDeltaXp);
-    C.eSkill1 = FHE.add(C.eSkill1, eDeltaSkill1);
-    C.eSkill2 = FHE.add(C.eSkill2, eDeltaSkill2);
-    C.eSkill3 = FHE.add(C.eSkill3, eDeltaSkill3);
-    C.eSkill4 = FHE.add(C.eSkill4, eDeltaSkill4);
+    // Allow contract and player to keep using these ciphertexts
+    FHE.allowThis(eX);
+    FHE.allowThis(eY);
+    FHE.allow(eX, msg.sender);
+    FHE.allow(eY, msg.sender);
 
-    // Ensure ACL stays correct for the updated ciphertexts
-    FHE.allowThis(C.eXp);
-    FHE.allowThis(C.eSkill1);
-    FHE.allowThis(C.eSkill2);
-    FHE.allowThis(C.eSkill3);
-    FHE.allowThis(C.eSkill4);
+    // Compute squared distance to center: dist2 = x^2 + y^2 (all under FHE)
+    euint16 eXSq = FHE.mul(eX, eX);
+    euint16 eYSq = FHE.mul(eY, eY);
+    euint16 eDist2 = FHE.add(eXSq, eYSq);
 
-    FHE.allow(C.eXp, msg.sender);
-    FHE.allow(C.eSkill1, msg.sender);
-    FHE.allow(C.eSkill2, msg.sender);
-    FHE.allow(C.eSkill3, msg.sender);
-    FHE.allow(C.eSkill4, msg.sender);
+    // Determine encrypted ring code based on squared radius thresholds.
+    //
+    // We encode:
+    //   0 = miss
+    //   1 = outer ring
+    //   2 = inner ring
+    //   3 = bull
+    //
+    // Using ascending selects so that closer rings overwrite outer ones.
+    euint16 eZero = FHE.asEuint16(0);
+    euint16 eRing = eZero;
 
-    emit CharacterUpdated(
+    // dist2 <= outerRadius2 ? 1 : 0
+    eRing = FHE.select(
+      FHE.le(eDist2, FHE.asEuint16(outerRadius2)),
+      FHE.asEuint16(1),
+      eRing
+    );
+
+    // dist2 <= innerRadius2 ? 2 : previous
+    eRing = FHE.select(
+      FHE.le(eDist2, FHE.asEuint16(innerRadius2)),
+      FHE.asEuint16(2),
+      eRing
+    );
+
+    // dist2 <= bullRadius2 ? 3 : previous
+    eRing = FHE.select(
+      FHE.le(eDist2, FHE.asEuint16(bullRadius2)),
+      FHE.asEuint16(3),
+      eRing
+    );
+
+    // Persist encrypted outcome
+    S.eX        = eX;
+    S.eY        = eY;
+    S.eDist2    = eDist2;
+    S.eRingCode = eRing;
+    S.decided   = true;
+
+    // Ensure contract retains long-term rights on stored ciphertexts
+    FHE.allowThis(S.eX);
+    FHE.allowThis(S.eY);
+    FHE.allowThis(S.eDist2);
+    FHE.allowThis(S.eRingCode);
+
+    // Allow player to decrypt everything via userDecrypt
+    FHE.allow(S.eX, msg.sender);
+    FHE.allow(S.eY, msg.sender);
+    FHE.allow(S.eDist2, msg.sender);
+    FHE.allow(S.eRingCode, msg.sender);
+
+    emit ShotTaken(
       msg.sender,
-      characterId,
-      FHE.toBytes32(C.eXp),
-      FHE.toBytes32(C.eSkill1),
-      FHE.toBytes32(C.eSkill2),
-      FHE.toBytes32(C.eSkill3),
-      FHE.toBytes32(C.eSkill4)
+      FHE.toBytes32(S.eX),
+      FHE.toBytes32(S.eY),
+      FHE.toBytes32(S.eDist2),
+      FHE.toBytes32(S.eRingCode)
     );
   }
 
@@ -247,67 +250,48 @@ contract EncryptedCharacterProgress is ZamaEthereumConfig {
   // ---------------------------------------------------------------------------
 
   /**
-   * Lightweight metadata getter (no FHE operations).
-   * Lets frontends check if a character exists without exposing stats.
-   */
-  function getCharacterMeta(address player, uint256 characterId)
-    external
-    view
-    returns (bool exists)
-  {
-    CharacterStats storage C = characters[player][characterId];
-    return C.exists;
-  }
-
-  /**
-   * Returns encrypted handles for the caller's character stats:
-   * - xpHandle:      encrypted XP (userDecrypt only).
-   * - skill1Handle:  encrypted skill 1 (userDecrypt only).
-   * - skill2Handle:  encrypted skill 2 (userDecrypt only).
-   * - skill3Handle:  encrypted skill 3 (userDecrypt only).
-   * - skill4Handle:  encrypted skill 4 (userDecrypt only).
+   * Returns encrypted handles for the caller's last shot:
+   * - xHandle:       encrypted x coordinate
+   * - yHandle:       encrypted y coordinate
+   * - dist2Handle:   encrypted squared distance to center
+   * - ringCodeHandle encrypted ring classification: 0..3
+   * - decided:       whether a shot has been recorded
    *
-   * The caller can pass these handles to the Relayer SDK's userDecrypt(...)
-   * along with their EIP-712 signature to retrieve plaintext values locally.
+   * Frontend uses these with userDecrypt(...) to reveal the result locally.
    */
-  function getMyCharacterHandles(uint256 characterId)
+  function getMyLastShotHandles()
     external
     view
     returns (
-      bytes32 xpHandle,
-      bytes32 skill1Handle,
-      bytes32 skill2Handle,
-      bytes32 skill3Handle,
-      bytes32 skill4Handle,
-      bool exists
+      bytes32 xHandle,
+      bytes32 yHandle,
+      bytes32 dist2Handle,
+      bytes32 ringCodeHandle,
+      bool decided
     )
   {
-    CharacterStats storage C = characters[msg.sender][characterId];
+    ShotOutcome storage S = shots[msg.sender];
     return (
-      FHE.toBytes32(C.eXp),
-      FHE.toBytes32(C.eSkill1),
-      FHE.toBytes32(C.eSkill2),
-      FHE.toBytes32(C.eSkill3),
-      FHE.toBytes32(C.eSkill4),
-      C.exists
+      FHE.toBytes32(S.eX),
+      FHE.toBytes32(S.eY),
+      FHE.toBytes32(S.eDist2),
+      FHE.toBytes32(S.eRingCode),
+      S.decided
     );
   }
 
   /**
-   * (Optional admin helper)
-   * Expose encrypted XP handle for a given player/character.
-   * This does NOT allow the owner to decrypt; it just returns a handle.
-   * Only parties with ACL rights can actually decrypt it via userDecrypt.
-   *
-   * Included as an example of owner-only analytics tooling.
+   * Owner-only: expose another player's encrypted ring code handle.
+   * This is still only a ciphertext; owner cannot see the clear value
+   * unless they are also granted decryption rights in a custom flow.
    */
-  function getCharacterXpHandleForOwner(address player, uint256 characterId)
+  function getPlayerRingHandle(address player)
     external
     view
     onlyOwner
-    returns (bytes32 xpHandle, bool exists)
+    returns (bytes32 ringCodeHandle, bool decided)
   {
-    CharacterStats storage C = characters[player][characterId];
-    return (FHE.toBytes32(C.eXp), C.exists);
+    ShotOutcome storage S = shots[player];
+    return (FHE.toBytes32(S.eRingCode), S.decided);
   }
 }
